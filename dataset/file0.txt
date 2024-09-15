@@ -1,0 +1,64 @@
+ll ult = 0;
+const ll MAX = 6e5;
+vi ft;
+bool have[MAX];
+int fila[MAX];
+
+struct Node{
+    int K[26];
+    int Link = 0;
+    ll cnt = 0;
+    int pai = 0;
+    char lt = '#';
+    bool viz = false;
+
+    inline bool hv(char let){
+        return K[let - 'a'];
+    }
+
+    void add(char let){
+        K[let - 'a'] = ++ult; 
+    }
+}; Node arr[MAX];
+
+void add(string p){
+    int act = 0;
+    REP(i,0,p.size()){
+        if(!arr[act].hv(p[i])){
+            arr[act].add(p[i]);
+            arr[ult].pai = act;
+            arr[ult].lt = p[i];
+        }
+        act = arr[act].K[p[i] - 'a'];
+    }
+    arr[act].cnt++;
+    ft.push_back(act);
+}
+
+void builCorasick(){
+    for(int l = -1, r = 0; l < r;){
+        int prox = fila[++l];
+        Node &ac = arr[prox];
+        int cand = arr[ac.pai].Link;
+        REP(i,0,26){
+            if(ac.K[i]) fila[++r] = ac.K[i];
+        }
+
+        if(ac.pai == 0) continue;
+        while(!arr[cand].hv(ac.lt) && cand) cand = arr[cand].Link;
+        if(arr[cand].hv(ac.lt)) ac.Link = arr[cand].K[ac.lt - 'a'];
+    }
+}
+
+void query(string p){
+    int act = 0;
+    REP(i,0,p.size()){
+        while(!arr[act].hv(p[i]) && act) act = arr[act].Link;
+        if(arr[act].hv(p[i])) act = arr[act].K[p[i] - 'a']; 
+        int lk = act;
+        while(!arr[lk].viz){
+            arr[lk].viz = true;
+            lk = arr[lk].Link;
+        }
+    }
+}

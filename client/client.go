@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 )
 
 func readFile(filePath string) ([]byte, error) {
@@ -15,12 +17,7 @@ func readFile(filePath string) ([]byte, error) {
 	return data, nil
 }
 
-type MyADT struct {
-	sum  int
-	path string
-}
-
-func sum(filePath string, c chan MyADT) {
+func sum(filePath string, c chan int) {
 	data, _ := readFile(filePath)
 
 	_sum := 0
@@ -28,27 +25,27 @@ func sum(filePath string, c chan MyADT) {
 		_sum += int(b)
 	}
 
-	ans := MyADT{_sum, filePath}
+	ans := _sum
 	c <- ans
 }
 
 func main() {
-
-	conn, err := net.Dial("tcp", "150.165.42.166:2000")
+	conn, err := net.Dial("tcp", "localhost:2000")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	for {
-		tmp := make([]byte, 256)
-		_, err := conn.Read(tmp)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+	defer conn.Close()
 
-		fmt.Println(string(tmp))
+	c := make(chan int)
+	for _, path := range os.Args[1:] {
+		go sum(path, c)
 	}
 
+	for range os.Args[1:] {
+		hsh := <-c
+		fmt.Println(hsh)
+		binary.Write(conn, binary.BigEndian, int64(hsh))
+	}
 }
