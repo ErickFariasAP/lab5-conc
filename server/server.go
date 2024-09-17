@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"sync"
 )
 
 type ClientInfo struct {
@@ -19,15 +18,12 @@ type ClientInfo struct {
 var (
 	mp         = make(map[int64][]string)
 	registerCh = make(chan ClientInfo)
-	mu         sync.Mutex
 )
 
 func register() {
 	for {
 		info := <-registerCh
-		mu.Lock()
 		mp[info.sum] = append(mp[info.sum], info.ip)
-		mu.Unlock()
 		fmt.Printf("Received: %d of %s\n", info.sum, info.ip)
 	}
 }
@@ -54,7 +50,6 @@ func registerServer() {
 func handleRegisterConn(c net.Conn) {
 	defer c.Close()
 	addr := c.RemoteAddr().String()
-	fmt.Printf("Client IP Address: %s\n", addr)
 
 	for {
 		var hash int64
@@ -91,17 +86,18 @@ func buscaServer() {
 func handleSearchConn(c net.Conn) {
 	defer c.Close()
 	addr := c.RemoteAddr().String()
-	fmt.Printf("Client IP Address: %s\n", addr)
-
+	
 	var hash int64
 	err := binary.Read(c, binary.BigEndian, &hash)
 	if err != nil {
 		fmt.Println("Error1 reading from connection:", err)
 		return
 	}
+
+	fmt.Printf("Client %s searching for %d\n", addr, hash)
+
 	ips := mp[hash]
 	ips_string := strings.Join(ips, " ")
-
 	ipsBytes := []byte(ips_string)
 	ipsLen := int64(len(ipsBytes))
 
