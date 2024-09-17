@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
+	"sync"
 )
 
 type ClientInfo struct {
@@ -15,14 +17,17 @@ type ClientInfo struct {
 }
 
 var (
-	mp    = make(map[int64][]string)
-	canal = make(chan ClientInfo)
+	mp         = make(map[int64][]string)
+	registerCh = make(chan ClientInfo)
+	mu         sync.Mutex
 )
 
-func cadastra() {
+func register() {
 	for {
-		info := <-canal
+		info := <-registerCh
+		mu.Lock()
 		mp[info.sum] = append(mp[info.sum], info.ip)
+		mu.Unlock()
 		fmt.Printf("Received: %d of %s\n", info.sum, info.ip)
 	}
 }
@@ -34,7 +39,7 @@ func registerServer() {
 		log.Fatal(err)
 	}
 
-	go cadastra()
+	go register()
 	for {
 		conn, err := listener.Accept()
 		defer conn.Close()
@@ -59,12 +64,64 @@ func handleRegisterConn(c net.Conn) {
 			return
 		}
 
-		canal <- ClientInfo{hash, addr}
+		registerCh <- ClientInfo{hash, addr}
+	}
+}
+
+func buscaServer() {
+	for {
+		listener, err := net.Listen("tcp", "localhost:2001")
+		fmt.Println("Start busca server")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for {
+			conn, err := listener.Accept()
+			defer conn.Close()
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			go handleSearchConn(conn)
+		}
+
+	}
+}
+
+func handleSearchConn(c net.Conn) {
+	defer c.Close()
+	addr := c.RemoteAddr().String()
+	fmt.Printf("Client IP Address: %s\n", addr)
+
+	var hash int64
+	err := binary.Read(c, binary.BigEndian, &hash)
+	if err != nil {
+		fmt.Println("Error1 reading from connection:", err)
+		return
+	}
+	mu.Lock()
+	ips := mp[hash]
+	mu.Unlock()
+	ips_string := strings.Join(ips, " ")
+
+	ipsBytes := []byte(ips_string)
+	ipsLen := int64(len(ipsBytes))
+
+	err = binary.Write(c, binary.BigEndian, ipsLen)
+	if err != nil {
+		fmt.Println("Error writing IP length:", err)
+		return
+	}
+
+	_, err = c.Write(ipsBytes)
+	if err != nil {
+		fmt.Println("Error writing IP string:", err)
+		return
 	}
 }
 
 func main() {
-	registerServer()
-	//queryServer()
+	go registerServer()
+	go buscaServer()
 	select {}
 }
