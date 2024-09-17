@@ -99,9 +99,7 @@ func handleSearchConn(c net.Conn) {
 		fmt.Println("Error1 reading from connection:", err)
 		return
 	}
-	mu.Lock()
 	ips := mp[hash]
-	mu.Unlock()
 	ips_string := strings.Join(ips, " ")
 
 	ipsBytes := []byte(ips_string)
