@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"slices"
 	"strings"
 )
 
@@ -23,8 +24,15 @@ var (
 func register() {
 	for {
 		info := <-registerCh
-		mp[info.sum] = append(mp[info.sum], info.ip)
-		fmt.Printf("Received: %d of %s\n", info.sum, info.ip)
+		if info.sum > 0 {
+			fmt.Printf("Received to Add: %d of %s\n", info.sum, info.ip)
+			mp[info.sum] = append(mp[info.sum], info.ip)
+		} else {
+			fmt.Printf("Received to Remove: %d of %s\n", -info.sum, info.ip)
+			mp[-info.sum] = slices.DeleteFunc(mp[-info.sum], func(s string) bool {
+				return s == info.ip
+			})
+		}
 	}
 }
 
@@ -38,7 +46,6 @@ func registerServer() {
 	go register()
 	for {
 		conn, err := listener.Accept()
-		defer conn.Close()
 		if err != nil {
 			log.Print(err)
 			continue
@@ -55,10 +62,9 @@ func handleRegisterConn(c net.Conn) {
 		var hash int64
 		err := binary.Read(c, binary.BigEndian, &hash)
 		if err != nil {
-			fmt.Println("Error reading from connection:", err)
+			fmt.Println("Error reading flag:", err)
 			return
 		}
-
 		registerCh <- ClientInfo{hash, addr}
 	}
 }
@@ -72,7 +78,6 @@ func buscaServer() {
 		}
 		for {
 			conn, err := listener.Accept()
-			defer conn.Close()
 			if err != nil {
 				log.Print(err)
 				continue
@@ -86,7 +91,7 @@ func buscaServer() {
 func handleSearchConn(c net.Conn) {
 	defer c.Close()
 	addr := c.RemoteAddr().String()
-	
+
 	var hash int64
 	err := binary.Read(c, binary.BigEndian, &hash)
 	if err != nil {
