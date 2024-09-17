@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"lab5-conc/config"
 	"net"
 	"os"
 	"strconv"
@@ -39,12 +40,12 @@ func sum(filePath string, c chan int64) {
 func main() {
 	var port string
 	if len(os.Args) > 1 && os.Args[1] == "search" {
-		port = "2001"
+		port = config.SearchPort
 	} else {
-		port = "2000"
+		port = config.RegisterPort
 	}
 
-	conn, err := net.Dial("tcp", "localhost:"+port)
+	conn, err := net.Dial("tcp", config.ServerIP+":"+port)
 	if err != nil {
 		fmt.Println(err)
 		return

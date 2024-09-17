@@ -20,7 +20,7 @@ struct Node{
         K[let - 'a'] = ++ult; 
     }
 }; Node arr[MAX];
-
+dsdsddsdssdsdsd
 void add(string p){
     int act = 0;
     REP(i,0,p.size()){

@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"lab5-conc/config"
 	"log"
 	"net"
 	"slices"
@@ -37,7 +38,7 @@ func register() {
 }
 
 func registerServer() {
-	listener, err := net.Listen("tcp", "localhost:2000")
+	listener, err := net.Listen("tcp", config.ServerIP+":"+config.RegisterPort)
 	fmt.Println("Start register server")
 	if err != nil {
 		log.Fatal(err)
@@ -62,7 +63,7 @@ func handleRegisterConn(c net.Conn) {
 		var hash int64
 		err := binary.Read(c, binary.BigEndian, &hash)
 		if err != nil {
-			fmt.Println("Error reading flag:", err)
+			fmt.Println("Error reading hash:", err)
 			return
 		}
 		registerCh <- ClientInfo{hash, addr}
@@ -71,8 +72,8 @@ func handleRegisterConn(c net.Conn) {
 
 func buscaServer() {
 	for {
-		listener, err := net.Listen("tcp", "localhost:2001")
-		fmt.Println("Start busca server")
+		listener, err := net.Listen("tcp", config.ServerIP+":"+config.SearchPort)
+		fmt.Println("Start search server")
 		if err != nil {
 			log.Fatal(err)
 		}
