@@ -7,4 +7,4 @@ if [ "$#" -lt 1 ]; then
 fi
 
 # chama o programa go com os arg passados para o script bash
-go run  "$(dirname "$0")/client.go" "$@"
+go run  "$(dirname "$0")/*.go" "$@"
