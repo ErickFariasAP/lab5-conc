@@ -33,7 +33,7 @@ go run *.go ../dataset
 Para receber a informação de quais ips conectados ao servidor tem um arquivo especifico use o comando:
 
 ```bash
-go run *.go search
+go run *.go search <HASH_DO_ARQUIVO>
 ```
 
 ## 3. Conexão entre máquinas diferentes
