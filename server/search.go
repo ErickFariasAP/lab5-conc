@@ -42,10 +42,13 @@ func handleSearchConn(c net.Conn) {
 	fmt.Printf("Client %s searching for %d\n", addr, hash)
 
 	ips := mp[hash]
+	if len(ips) == 0 {
+		ips = append(ips, "no-machines-with-this-hash")
+	}
+
 	ips_string := strings.Join(ips, " ")
 	ipsBytes := []byte(ips_string)
 	ipsLen := int64(len(ipsBytes))
-
 	err = binary.Write(c, binary.BigEndian, ipsLen)
 	if err != nil {
 		fmt.Println("Error writing IP length:", err)
